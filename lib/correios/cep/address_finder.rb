@@ -2,6 +2,7 @@
 module Correios
   module CEP
     class AddressFinder
+      @@errors = {}
       def initialize(args = {})
         @web_service = args.fetch(:web_service, Correios::CEP::WebService.new)
         @parser = args.fetch(:parser, Correios::CEP::Parser.new)
@@ -12,11 +13,39 @@ module Correios
         validate(zipcode)
 
         response = web_service.request(zipcode)
+
+        @@errors = parser.errors(response)
+
         parser.address(response)
       end
 
       def self.get(zipcode, args = {})
         self.new(args).get(zipcode)
+      end
+
+      def get_with_errors(zipcode)
+        zipcode = zipcode.to_s.strip
+        validate(zipcode)
+
+        response = web_service.request(zipcode)
+
+        @@errors = parser.errors(response)
+
+        address = parser.address(response)
+        address[:errors] = @@errors
+        address
+      end
+
+      def self.get_with_errors(zipcode, args = {})
+        self.new(args).get_with_errors(zipcode)
+      end
+
+      def get_errors
+        @@errors
+      end
+
+      def self.get_errors (args = {})
+        self.new(args).get_errors
       end
 
       private

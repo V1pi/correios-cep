@@ -14,6 +14,10 @@ module Correios
         'complemento2' => :complement2,
       }.freeze
 
+      ERROR_MAP = {
+        'faultstring'  => :error_name
+      }.freeze
+
       def address(xml)
         doc = Ox.parse(xml)
 
@@ -27,6 +31,21 @@ module Correios
 
         join_complements(address)
         address
+      end
+
+      def errors(xml)
+        doc = Ox.parse(xml)
+        errors_node = find_node(doc.nodes, 'soap:Fault')
+
+        return {} if errors_node.nil?
+
+        errors = {}
+
+        errors_node.nodes.each do |element|
+          errors[ERROR_MAP[element.name]] = text_for(element) if ERROR_MAP[element.name]
+        end
+
+        errors
       end
 
       private
